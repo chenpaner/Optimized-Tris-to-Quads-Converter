@@ -5,13 +5,13 @@ import sys
 from bpy.types import Operator, AddonPreferences
 
 bl_info = {
-    "name": "Optimized Tris to Quads Converter",
+    "name": "Optimized Tris to Quads Converter三角面>四边面(优化版)",
     "author": "Rulesobeyer (https://github.com/Rulesobeyer/)",
     "version": (1, 2),
     "blender": (4, 0, 0),
     "support": "COMMUNITY",
     "category": "Mesh",
-    "description": "Tris to quads by mathematical optimization.",
+    "description": "Tris to quads by mathematical optimization.通过数学优化将三角面转换为四边形",
     "location": "Editmode > Face",
     "warning": "",
     "doc_url": "https://github.com/Rulesobeyer/Tris-Quads-Ex",
@@ -43,21 +43,20 @@ class TrisToQuadsPreferences(AddonPreferences):
 
 class CEF_OT_tris_convert_to_quads_ex(Operator):
     """Tris to Quads"""
-
     bl_idname = "mesh.tris_convert_to_quads_ex"
-    bl_label = "Optimized Tris to Quads Converter"
-    bl_description = "Tris to quads by mathematical optimization."
+    bl_label = "三角面>四边面(优化版)"
+    bl_description = "Tris to quads by mathematical optimization\n通过数学优化将三角面转换为四边形."
     bl_options = {"REGISTER", "UNDO"}
 
     def execute(self, context):
         if len(bpy.context.selected_objects) != 1:
-            self.report({"WARNING"}, "Select one object.")
+            self.report({"WARNING"}, "要先选中要转换的面.")
             return {"CANCELLED"}
 
         try:
             self.convert_tris_to_quads(context)
         except ImportError:
-            self.report({"ERROR"}, "Pulp is not installed")
+            self.report({"ERROR"}, "Pulp模块未安装，在插件设置面板里先安装")
             return {"CANCELLED"}
 
         return {"FINISHED"}
@@ -112,7 +111,7 @@ class CEF_OT_tris_convert_to_quads_ex(Operator):
                 if value(v) > 0.5:
                     edge.select_set(True)
                     n += 1
-            self.report({"INFO"}, f"{obj.name}: {n} edges are dissolved.")
+            self.report({"INFO"}, f"{obj.name}: {n} 个边被融并.")
             bpy.ops.mesh.dissolve_edges(use_verts=False)
             bpy.ops.mesh.select_all(action="DESELECT")
             bpy.ops.mesh.select_face_by_sides(type="NOTEQUAL")
@@ -122,15 +121,20 @@ class CEF_OT_tris_convert_to_quads_ex(Operator):
 ui_classes = (CEF_OT_tris_convert_to_quads_ex, InstallPulpOperator, TrisToQuadsPreferences)
 
 def menu_func_tris_to_quads(self, context):
-    self.layout.operator(CEF_OT_tris_convert_to_quads_ex.bl_idname)
+    if bpy.context.tool_settings.mesh_select_mode[2]:
+        layout = self.layout
+        layout.separator(factor=1.0)
+        layout.operator(CEF_OT_tris_convert_to_quads_ex.bl_idname, icon_value=312)
 
 def register():
     for ui_class in ui_classes:
         bpy.utils.register_class(ui_class)
-    bpy.types.VIEW3D_MT_edit_mesh_faces.append(menu_func_tris_to_quads)
+    # bpy.types.VIEW3D_MT_edit_mesh_faces.append(menu_func_tris_to_quads)
+    bpy.types.VIEW3D_MT_edit_mesh_context_menu.append(menu_func_tris_to_quads)
 
 def unregister():
-    bpy.types.VIEW3D_MT_edit_mesh_faces.remove(menu_func_tris_to_quads)
+    #bpy.types.VIEW3D_MT_edit_mesh_faces.remove(menu_func_tris_to_quads)
+    bpy.types.VIEW3D_MT_edit_mesh_context_menu.remove(menu_func_tris_to_quads)
     for ui_class in ui_classes:
         bpy.utils.unregister_class(ui_class)
 
